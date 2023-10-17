@@ -1,0 +1,220 @@
+import numpy as np # linear algebra
+import pandas as pd # data processing,
+data=pd.read_csv('fatalities_isr_pse_conflict_2000_to_2023.csv')
+data.head()
+data.info()
+data.describe()
+data.isna().sum()   #CHECKING NULL VALUES
+data.drop('notes', axis=1, inplace=True)
+
+#REPLACING NULL VALUES
+data['age']=data['age'].fillna(data['age'].mean())
+data['gender']=data['gender'].fillna(data['gender'].mode()[0])
+data['type_of_injury']=data['type_of_injury'].fillna(data['type_of_injury'].mode()[0])
+data['took_part_in_the_hostilities']=data['took_part_in_the_hostilities'].fillna(data['took_part_in_the_hostilities'].mode()[0])
+data['place_of_residence']=data['place_of_residence'].fillna(data['place_of_residence'].mode()[0])
+data['place_of_residence_district']=data['place_of_residence_district'].fillna(data['place_of_residence_district'].mode()[0])
+
+data.isna().sum()      
+gender_counts = data['gender'].value_counts()            #Genderwise Count
+gender_counts
+
+#Average/Mean_Age
+mean_age = data['age'].mean()
+print(f"Mean Age: {mean_age:.2f}")
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set(color_codes=True)
+%matplotlib inline
+
+# Bar chart for Gender wise event count
+
+plt.figure(figsize=(8, 6))
+sns.set(style="whitegrid")
+ax = sns.countplot(data=data, x='gender', palette='pastel')
+# Annotate the count on top of each bar
+for p in ax.patches:
+    ax.annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='bottom')
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.title('Event Count by Gender')
+plt.show()
+
+# Histogram for age distribution
+plt.figure(figsize=(14, 8))
+sns.set_style("whitegrid")
+ax = sns.histplot(data=data, x='age', bins=20, kde=True, color='skyblue')
+plt.xlabel('Age')
+plt.ylabel('Percentage')
+plt.title('Age Distribution')
+# Annotate each bar with the percentage
+total_count = len(data['age'])  
+for p in ax.patches:
+    percentage = (p.get_height() / total_count) * 100
+    ax.annotate(f'{percentage:.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='bottom')
+plt.show()
+
+#Pie Chart for Citizenship Distribution
+citizenship_counts = data['citizenship'].value_counts()
+plt.figure(figsize=(8, 8))
+plt.pie(citizenship_counts, labels=citizenship_counts.index, autopct='%1.1f%%', startangle=140, colors=sns.color_palette('Set3'))
+plt.axis('equal')
+plt.title('Citizenship Distribution')
+plt.show()
+
+American_Citicen_Count = data[data['citizenship'] == 'American']['citizenship'].count()
+Jordanian_Citizen_Count = data[data['citizenship'] == 'Jordanian']['citizenship'].count()
+print("American_Citizen_Count:", American_count)
+print("Jordanian_Citizen_Countt:", Jordanian_count)
+
+took_part_in_the_hostilities = data.took_part_in_the_hostilities.value_counts().reset_index()
+took_part_in_the_hostilities.columns = ['took_part_in_the_hostilities','count']
+
+#Graph representing the number of people who took_part_in_the_hostilities
+plt.figure(figsize = (10,8))
+ax = sns.barplot(x = 'took_part_in_the_hostilities',y = 'count',data = took_part_in_the_hostilities)
+plt.xlabel('took_part_in_the_hostilities')
+plt.ylabel('Number of people')
+plt.title('Graph representing the number of people who took_part_in_the_hostilities')
+for p in ax.patches:
+    ax.annotate(f'{p.get_height()}', (p.get_x() + p.get_width() / 2., p.get_height()), 
+                ha='center', va='center', fontsize=12, color='black', xytext=(0, 5), textcoords='offset points')
+plt.show()
+
+#Event Location Count by Region Count Plot
+plt.figure(figsize=(15, 6))
+sns.set_style("whitegrid")
+ax = sns.countplot(data=data, x='event_location_region', palette='Set1')
+plt.xticks(rotation=90)
+plt.ylabel('Percentage')
+plt.title('Event Location Count by Region')
+# Annotate each bar with the percentage
+total_count = len(data['event_location_region'])  # Assuming 'event_location_region' is the column representing regions
+for p in ax.patches:
+    percentage = (p.get_height() / total_count) * 100
+    ax.annotate(f'{percentage:.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='bottom')
+plt.show()
+
+# Converting date columns to datetime
+data['date_of_event'] = pd.to_datetime(data['date_of_event'])
+data['date_of_death'] = pd.to_datetime(data['date_of_death'])
+
+#Calculating the number of events per day
+events_per_day = data.groupby('date_of_event').size()
+plt.figure(figsize=(12, 8))
+events_per_day.plot()
+plt.title('Events Over Time')
+plt.xlabel('Date of Event')
+plt.ylabel('Number of Events')
+plt.show()
+
+# Grouping the 'date_of_event' and 'killed_by' column and calculating 
+#the count of events for each combination
+
+events_by_killed_by = data.groupby(['date_of_event', 'killed_by']).size().unstack().fillna(0)
+
+plt.figure(figsize=(12, 6))
+for column in events_by_killed_by.columns:
+    plt.plot(events_by_killed_by.index, events_by_killed_by[column], label=column)
+plt.title('Number of Events Over Time by "killed_by"')
+plt.xlabel('Date of Event')
+plt.ylabel('Number of Events')
+plt.legend(loc='upper right', fontsize='small')
+plt.xticks(rotation=45)
+plt.show()
+
+#GEOLOGICAL ANALYSIS
+
+#Top 5 event locations by count
+
+top5_event_locations = data['event_location'].value_counts().head(5)
+
+#Bar plot for the top 5 event locations
+plt.figure(figsize=(12, 6))
+sns.barplot(x=top5_event_locations.index, y=top5_event_locations.values)
+plt.title('Top 5 Event Locations by Count')
+plt.xlabel('Event Location')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.show()
+
+#Top 5 place of residence by count
+
+top5_place_of_residence = data['place_of_residence'].value_counts().head(5)
+
+#Bar plot for the top 5 event locations
+plt.figure(figsize=(12, 6))
+sns.barplot(x=top5_place_of_residence.index, y=top5_place_of_residence.values)
+plt.title('Top 5 Places of residence by Count')
+plt.xlabel('Place of Residence')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.show()
+
+#places of residence  district by count
+
+place_of_residence_district = data['place_of_residence_district'].value_counts()
+
+plt.figure(figsize=(12, 6))
+sns.barplot(x=place_of_residence_district.index, y=place_of_residence_district.values)
+plt.title('count over place of residence district')
+plt.xlabel('Place of Residence District')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.show()
+
+## Injuries and Ammunation
+
+top5_ammunition_counts = data['ammunition'].value_counts().head(5)
+
+plt.figure(figsize=(12, 6))
+ax = sns.barplot(x=top5_ammunition_counts.index, y=top5_ammunition_counts.values)
+plt.title('Top 5 Ammunition Distribution')
+plt.xlabel('Ammunition')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+# Add percentage labels above the bars
+total = len(data['ammunition'])  # Total number of data points
+for p in ax.patches:
+    percentage = '{:.1f}%'.format(100 * p.get_height() / total)
+    x = p.get_x() + p.get_width() / 2
+    y = p.get_height()
+    ax.annotate(percentage, (x, y), ha='center', va='bottom')
+plt.show()
+
+#Killed Count  vs Killed By
+
+killed_by_counts = data['killed_by'].value_counts()
+plt.figure(figsize=(12, 6))
+sns.barplot(x=killed_by_counts.index, y=killed_by_counts.values)
+plt.title('killed counts Distribution')
+plt.xlabel('killed By')
+plt.ylabel('Count')
+plt.xticks(rotation=90)
+plt.show()
+
+#Count of  Injuries by Type
+
+plt.figure(figsize=(10, 6))
+sns.set_style("whitegrid")
+ax = sns.countplot(data=data, x='type_of_injury', palette='viridis')
+
+plt.xticks(rotation=45)
+plt.ylabel('Percentage')
+plt.title('Injury Type Distribution')
+# Annotate each bar with the percentage
+total_count = len(data['type_of_injury'])  # Assuming 'type_of_injury' is the column representing injury types
+for p in ax.patches:
+    percentage = (p.get_height() / total_count) * 100
+    ax.annotate(f'{percentage:.2f}%', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='bottom')
+plt.show()
+
+#Scatter Plot for Age Vs Date of Death
+
+plt.figure(figsize=(12, 8))
+sns.scatterplot(data=data, x='date_of_death', y='age', alpha=0.5, color='b')
+plt.xlabel('Date of Death')
+plt.ylabel('Age')
+plt.title('Age vs. Date of Death')
+plt.show()
